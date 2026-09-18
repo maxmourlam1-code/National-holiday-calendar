@@ -10,204 +10,234 @@
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  background: #f0f6ff;
-  color: #172b4d;
+  background: #f0f4ff;
+  color: #222;
 }
 header {
-  background: #1769e0;
+  background: #4267b2;
   color: white;
+  padding: 20px;
   text-align: center;
-  padding: 25px 15px;
 }
 header h1 { margin: 0 0 8px; }
-main { max-width: 850px; margin: auto; padding: 20px; }
-input, textarea, button {
-  font: inherit;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #ccd6e5;
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 15px;
 }
-input, textarea { width: 100%; margin: 6px 0; }
-button {
-  cursor: pointer;
-  border: none;
-  background: #1769e0;
-  color: white;
-  margin: 5px 3px;
-}
-button:hover { opacity: .85; }
 .card {
   background: white;
   padding: 18px;
-  margin: 15px 0;
   border-radius: 15px;
-  box-shadow: 0 3px 12px #00000012;
+  margin: 15px 0;
+  box-shadow: 0 2px 8px #0001;
 }
-.card img {
+input, textarea, button {
+  font: inherit;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+input, textarea { width: 100%; }
+button {
+  background: #4267b2;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+button:hover { background: #294c91; }
+.holiday {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 15px;
+  margin-top: 12px;
+}
+.holiday img {
   width: 100%;
   max-height: 250px;
   object-fit: cover;
   border-radius: 10px;
-  margin-top: 10px;
 }
-.date { color: #1769e0; font-weight: bold; }
-.actions { margin-top: 10px; }
-.actions button { background: #e7efff; color: #172b4d; }
-form { display: none; }
-form.show { display: block; }
-h2 { margin-top: 10px; }
+.actions button {
+  margin-right: 5px;
+  background: #eee;
+  color: #222;
+}
 .comment {
-  background: #f0f4fa;
+  background: #f4f4f4;
   padding: 8px;
   border-radius: 8px;
   margin-top: 5px;
 }
-small { color: #63748a; }
+.small { color: #666; font-size: 14px; }
+.hidden { display: none; }
 </style>
 </head>
-
 <body>
+
 <header>
-  <h1>🎉 National Holiday Calendar</h1>
-  <p>Discover holidays. Create your own. Celebrate together!</p>
+<h1>🗓️ National Holiday Calendar</h1>
+<p>Create, discover, and celebrate holidays!</p>
 </header>
 
-<main>
-  <input id="search" placeholder="🔍 Search holidays..."
-         oninput="displayHolidays()">
+<div class="container">
 
-  <button onclick="toggleForm()">➕ Create a Holiday</button>
+<div class="card">
+<h2>🔎 Search Holidays</h2>
+<input id="search" placeholder="Search holidays..." oninput="displayHolidays()">
+</div>
 
-  <button onclick="toggleNotifications()">
-    🔔 Notifications
-  </button>
+<div class="card">
+<h2>➕ Create Your Own Holiday</h2>
+<input id="holidayName" placeholder="Holiday name">
+<input id="holidayDate" type="date">
+<textarea id="holidayDescription" placeholder="Describe your holiday..."></textarea>
+<input id="holidayImage" placeholder="Photo URL (optional)">
+<button onclick="createHoliday()">Create Holiday 🎉</button>
+<p id="message"></p>
+</div>
 
-  <p id="notificationStatus"></p>
+<div class="card">
+<h2>🔔 Notifications</h2>
+<label>
+<input type="checkbox" id="notifications" style="width:auto">
+ Allow notification reminders
+</label>
+<p class="small">This saves your preference on this device.</p>
+</div>
 
-  <form id="holidayForm" class="card" onsubmit="createHoliday(event)">
-    <h2>Create Your Holiday</h2>
+<div class="card">
+<h2>🌎 All Holidays</h2>
+<div id="holidayList"></div>
+</div>
 
-    <label>Holiday name</label>
-    <input id="holidayName" required placeholder="Example: Cat Day">
-
-    <label>Date</label>
-    <input id="holidayDate" type="date" required>
-
-    <label>Description</label>
-    <textarea id="holidayDescription"
-      placeholder="What is this holiday about?"></textarea>
-
-    <label>Photo URL (optional)</label>
-    <input id="holidayPhoto" type="url"
-      placeholder="https://example.com/photo.jpg">
-
-    <button type="submit">🎊 Publish Holiday</button>
-    <button type="button" onclick="toggleForm()">Cancel</button>
-  </form>
-
-  <h2>📅 All Holidays</h2>
-  <div id="holidayList"></div>
-</main>
+</div>
 
 <script>
-const starterHolidays = [
-  {
-    id: 1,
-    name: "New Year's Day",
-    date: "2027-01-01",
-    description: "Celebrate the beginning of a new year!",
-    photo: "",
-    likes: 0,
-    dislikes: 0,
-    comments: []
-  },
-  {
-    id: 2,
-    name: "International Cat Day",
-    date: "2027-08-08",
-    description: "A day to celebrate cats everywhere! 🐱",
-    photo: "",
-    likes: 0,
-    dislikes: 0,
-    comments: []
-  }
-];
-
 let holidays = JSON.parse(
-  localStorage.getItem("myHolidays")
-) || starterHolidays;
+  localStorage.getItem("holidays") || "[]"
+);
 
-let notificationsEnabled =
-  localStorage.getItem("notifications") === "true";
-
-function save() {
-  localStorage.setItem("myHolidays", JSON.stringify(holidays));
+if (holidays.length === 0) {
+  holidays = [
+    {
+      id: 1,
+      name: "National Pizza Day 🍕",
+      date: "2026-02-09",
+      description: "A day to celebrate delicious pizza!",
+      image: "",
+      likes: 0,
+      dislikes: 0,
+      comments: []
+    },
+    {
+      id: 2,
+      name: "International Cat Day 🐱",
+      date: "2026-08-08",
+      description: "Celebrate cats everywhere!",
+      image: "",
+      likes: 0,
+      dislikes: 0,
+      comments: []
+    }
+  ];
+  saveHolidays();
 }
 
-function escapeHTML(text) {
-  return String(text).replace(/[&<>"']/g, function(c) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    }[c];
-  });
+function saveHolidays() {
+  localStorage.setItem("holidays", JSON.stringify(holidays));
 }
 
-function toggleForm() {
-  document.getElementById("holidayForm").classList.toggle("show");
-}
+function createHoliday() {
+  const name = document.getElementById("holidayName").value.trim();
+  const date = document.getElementById("holidayDate").value;
+  const description = document.getElementById("holidayDescription").value.trim();
+  const image = document.getElementById("holidayImage").value.trim();
+  const message = document.getElementById("message");
 
-function toggleNotifications() {
-  notificationsEnabled = !notificationsEnabled;
-  localStorage.setItem("notifications", notificationsEnabled);
-  updateNotificationStatus();
-}
+  if (!name || !date) {
+    message.textContent = "Please enter a name and date.";
+    return;
+  }
 
-function updateNotificationStatus() {
-  document.getElementById("notificationStatus").textContent =
-    notificationsEnabled
-    ? "🔔 Notifications are turned on for this browser."
-    : "🔕 Notifications are turned off.";
-}
-
-function createHoliday(event) {
-  event.preventDefault();
-
-  const newHoliday = {
+  holidays.push({
     id: Date.now(),
-    name: document.getElementById("holidayName").value,
-    date: document.getElementById("holidayDate").value,
-    description: document.getElementById("holidayDescription").value,
-    photo: document.getElementById("holidayPhoto").value,
+    name: name,
+    date: date,
+    description: description,
+    image: image,
     likes: 0,
     dislikes: 0,
     comments: []
-  };
+  });
 
-  holidays.push(newHoliday);
-  save();
+  saveHolidays();
 
-  document.getElementById("holidayForm").reset();
-  document.getElementById("holidayForm").classList.remove("show");
+  document.getElementById("holidayName").value = "";
+  document.getElementById("holidayDate").value = "";
+  document.getElementById("holidayDescription").value = "";
+  document.getElementById("holidayImage").value = "";
 
+  message.textContent = "🎉 Holiday created!";
   displayHolidays();
-  alert("🎉 Your holiday was created!");
+}
+
+function displayHolidays() {
+  const list = document.getElementById("holidayList");
+  const search = document.getElementById("search").value.toLowerCase();
+
+  const filtered = holidays.filter(h =>
+    h.name.toLowerCase().includes(search) ||
+    h.description.toLowerCase().includes(search)
+  );
+
+  if (filtered.length === 0) {
+    list.innerHTML = "<p>No holidays found.</p>";
+    return;
+  }
+
+  list.innerHTML = filtered.map(h => `
+    <div class="holiday">
+      <h3>${escapeHTML(h.name)}</h3>
+      <p>📅 ${escapeHTML(h.date)}</p>
+      <p>${escapeHTML(h.description)}</p>
+
+      ${h.image ? `<img src="${escapeHTML(h.image)}" alt="Holiday photo" onerror="this.style.display='none'">` : ""}
+
+      <div class="actions">
+        <button onclick="likeHoliday(${h.id})">
+          👍 Like (${h.likes})
+        </button>
+        <button onclick="dislikeHoliday(${h.id})">
+          👎 Dislike (${h.dislikes})
+        </button>
+      </div>
+
+      <h4>💬 Comments</h4>
+      <div>
+        ${h.comments.map(c => `
+          <div class="comment">${escapeHTML(c)}</div>
+        `).join("")}
+      </div>
+
+      <input id="comment-${h.id}" placeholder="Write a comment...">
+      <button onclick="addComment(${h.id})">Post Comment</button>
+    </div>
+  `).join("");
 }
 
 function likeHoliday(id) {
-  const holiday = holidays.find(h => h.id === id);
-  if (holiday) holiday.likes++;
-  save();
+  const h = holidays.find(h => h.id === id);
+  if (h) h.likes++;
+  saveHolidays();
   displayHolidays();
 }
 
 function dislikeHoliday(id) {
-  const holiday = holidays.find(h => h.id === id);
-  if (holiday) holiday.dislikes++;
-  save();
+  const h = holidays.find(h => h.id === id);
+  if (h) h.dislikes++;
+  saveHolidays();
   displayHolidays();
 }
 
@@ -217,62 +247,32 @@ function addComment(id) {
 
   if (!text) return;
 
-  const holiday = holidays.find(h => h.id === id);
-  if (holiday) holiday.comments.push(text);
+  const h = holidays.find(h => h.id === id);
+  if (h) h.comments.push(text);
 
-  input.value = "";
-  save();
+  saveHolidays();
   displayHolidays();
 }
 
-function displayHolidays() {
-  const search = document.getElementById("search").value.toLowerCase();
-  const list = document.getElementById("holidayList");
-
-  const results = holidays
-    .filter(h =>
-      h.name.toLowerCase().includes(search) ||
-      h.description.toLowerCase().includes(search)
-    )
-    .sort((a, b) => a.date.localeCompare(b.date));
-
-  if (results.length === 0) {
-    list.innerHTML = "<p>No holidays found. Try another search!</p>";
-    return;
-  }
-
-  list.innerHTML = results.map(h => `
-    <div class="card">
-      <h2>🎊 ${escapeHTML(h.name)}</h2>
-      <p class="date">📅 ${escapeHTML(h.date)}</p>
-      <p>${escapeHTML(h.description)}</p>
-      ${h.photo ? `<img src="${escapeHTML(h.photo)}"
-        alt="Photo for ${escapeHTML(h.name)}"
-        onerror="this.style.display='none'">` : ""}
-      <div class="actions">
-        <button onclick="likeHoliday(${h.id})">
-          ❤️ Like ${h.likes}
-        </button>
-        <button onclick="dislikeHoliday(${h.id})">
-          👎 Dislike ${h.dislikes}
-        </button>
-      </div>
-      <h3>💬 Comments</h3>
-      ${h.comments.map(c =>
-        `<div class="comment">${escapeHTML(c)}</div>`
-      ).join("")}
-      <input id="comment-${h.id}"
-        placeholder="Write a comment...">
-      <button onclick="addComment(${h.id})">
-        Post Comment
-      </button>
-    </div>
-  `).join("");
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
 }
 
-updateNotificationStatus();
+document.getElementById("notifications").checked =
+  localStorage.getItem("notifications") === "true";
+
+document.getElementById("notifications").addEventListener("change", e => {
+  localStorage.setItem("notifications", e.target.checked);
+});
+
 displayHolidays();
 </script>
-</body>
- </html>
 
+</body>
+</html>
